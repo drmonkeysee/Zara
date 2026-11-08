@@ -3,9 +3,9 @@ mod tests;
 
 use super::{FIRST_ARG_LABEL, MAX_ARITY, SECOND_ARG_LABEL, first, invalid_target};
 use crate::{
-    Exception, NumReader,
+    Exception,
     eval::{EvalResult, Frame},
-    number::{Integer, NumResult, Number, NumericError, NumericTypeName, Radix, Real},
+    number::{self, Integer, NumResult, Number, NumericError, NumericTypeName, Radix, Real},
     value::{Condition, TypeName, Value},
 };
 use std::fmt::Display;
@@ -344,7 +344,7 @@ fn number_to_string(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
-fn number_from_string(args: &[Value], _env: &Frame) -> EvalResult {
+fn number_from_string(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
     let s = arg
         .as_refstr()
@@ -361,8 +361,7 @@ fn number_from_string(args: &[Value], _env: &Frame) -> EvalResult {
         })
         .transpose()?
         .unwrap_or(Radix::default());
-    let r = NumReader::default();
-    todo!();
+    number::datum::read(s.as_ref(), radix, env, "<num-read>")
 }
 
 //

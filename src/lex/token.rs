@@ -2,7 +2,7 @@
 mod tests;
 
 use crate::{
-    number::{Number, NumericError, Real},
+    number::{Number, NumericError, Radix, Real},
     txt::TxtSpan,
 };
 use std::fmt::{self, Display, Formatter};
@@ -278,7 +278,13 @@ impl Display for TokenErrorKind {
                 write!(f, "numeric error - {err}")
             }
             Self::PolarInvalid => f.write_str("invalid polar literal"),
-            Self::RadixExpected { .. } => f.write_str("expected radix prefix, one of: #b #o #d #x"),
+            Self::RadixExpected { .. } => {
+                write!(
+                    f,
+                    "expected radix prefix, one of: {}",
+                    Radix::all_prefixes()
+                )
+            }
             Self::RationalInvalid => f.write_str("invalid rational literal"),
             Self::StringUnterminated => f.write_str(UNTERMINATED_STRING),
         }
@@ -323,6 +329,6 @@ fn format_char_range_error(msg: &str, f: &mut Formatter) -> fmt::Result {
     )
 }
 
-fn line_cont_token(line_cont: bool) -> &'static str {
+const fn line_cont_token(line_cont: bool) -> &'static str {
     if line_cont { "<\\>" } else { "" }
 }

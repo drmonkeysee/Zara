@@ -77,6 +77,7 @@ macro_rules! assume_safe_div {
     };
 }
 
+pub(crate) mod datum;
 mod precision;
 mod spec;
 #[cfg(test)]

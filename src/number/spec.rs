@@ -2,7 +2,7 @@ use super::{IntResult, Number, NumericError, Real, RealResult, Sign};
 use crate::txt::TxtSpan;
 use std::num::{IntErrorKind, ParseIntError};
 
-#[derive(Default)]
+#[derive(Copy, Clone, Default)]
 pub(crate) enum Radix {
     Binary,
     #[default]
@@ -22,12 +22,35 @@ impl Radix {
         }
     }
 
+    pub(crate) fn in_string(s: impl AsRef<str>) -> bool {
+        let s = s.as_ref();
+        // in most likely used order
+        [Self::Hexadecimal, Self::Octal, Self::Binary, Self::Decimal]
+            .iter()
+            .any(|rx| s.contains(rx.into_prefix()))
+    }
+
     pub(crate) fn num_to_string(&self, x: &Number) -> String {
         match self {
             Self::Binary => format!("{:b}", x),
             Self::Decimal => format!("{}", x),
             Self::Hexadecimal => format!("{:x}", x),
             Self::Octal => format!("{:o}", x),
+        }
+    }
+
+    pub(crate) fn all_prefixes() -> String {
+        [Self::Binary, Self::Octal, Self::Decimal, Self::Hexadecimal]
+            .map(Self::into_prefix)
+            .join(" ")
+    }
+
+    pub(crate) const fn into_prefix(self) -> &'static str {
+        match self {
+            Self::Binary => "#b",
+            Self::Decimal => "#d",
+            Self::Hexadecimal => "#x",
+            Self::Octal => "#o",
         }
     }
 }
