@@ -27,7 +27,10 @@ impl Radix {
         // in most likely used order
         [Self::Hexadecimal, Self::Octal, Self::Binary, Self::Decimal]
             .iter()
-            .any(|rx| s.contains(rx.into_prefix()))
+            .any(|rx| {
+                let p = rx.into_prefix();
+                s.contains(p) || s.contains(&p.to_ascii_uppercase())
+            })
     }
 
     pub(crate) fn num_to_string(&self, x: &Number) -> String {
