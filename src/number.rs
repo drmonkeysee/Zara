@@ -346,7 +346,7 @@ impl Number {
         if let Some(r) = expt.as_real()
             && r.is_exact_zero()
         {
-            Ok(Number::one())
+            Ok(Self::one())
         } else {
             match self {
                 Self::Complex(z) => z.pow(expt),
@@ -464,7 +464,7 @@ impl Number {
     fn powsq(&self) -> Self {
         match self {
             Self::Complex(z) => z.powsq(),
-            Self::Real(r) => Number::real(r * r),
+            Self::Real(r) => Self::real(r * r),
         }
     }
 
@@ -1416,9 +1416,9 @@ impl Real {
     pub(crate) fn rationalize(&self, tolerance: &Self) -> Self {
         match (self.try_to_exact(), tolerance.try_to_exact()) {
             (_, Ok(y)) if y.is_zero() => self.clone(),
-            (Err(_), Err(_)) => Real::nan(),
-            (Err(_), _) if self.is_nan() => Real::nan(),
-            (_, Err(_)) if tolerance.is_nan() => Real::nan(),
+            (Err(_), Err(_)) => Self::nan(),
+            (Err(_), _) if self.is_nan() => Self::nan(),
+            (_, Err(_)) if tolerance.is_nan() => Self::nan(),
             (Err(_), _) => self.clone(),
             (_, Err(_)) => 0.0.into(),
             (Ok(x), Ok(y)) => {
@@ -1601,12 +1601,12 @@ impl Real {
             } else if re.is_positive() {
                 Number::zerof()
             } else {
-                Number::complex(Real::nan(), Real::nan())
+                Number::complex(Self::nan(), Self::nan())
             })
         }
     }
 
-    fn powr(&self, expt: &Real) -> NumResult {
+    fn powr(&self, expt: &Self) -> NumResult {
         if self.is_exact_zero() {
             if expt.is_zero() {
                 return Ok(Number::onef());
