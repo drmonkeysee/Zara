@@ -7,7 +7,7 @@ mod stringsrc {
 
     #[test]
     fn empty() {
-        let target = StringSource::empty("test");
+        let target = StringLinesSource::empty("test");
 
         assert_matches!(
             target.ctx.as_ref(),
@@ -23,7 +23,7 @@ mod stringsrc {
     fn create_from_str() {
         let src = "line of source code";
 
-        let target = StringSource::new(src, "test");
+        let target = StringLinesSource::new(src, "test");
 
         assert_matches!(
             target.ctx.as_ref(),
@@ -37,7 +37,7 @@ mod stringsrc {
 
     #[test]
     fn context() {
-        let target = StringSource::new("foo", "test");
+        let target = StringLinesSource::new("foo", "test");
 
         let ctx = target.context();
 
@@ -46,7 +46,7 @@ mod stringsrc {
 
     #[test]
     fn iterate_empty() {
-        let mut target = StringSource::empty("test");
+        let mut target = StringLinesSource::empty("test");
 
         let line = target.next();
 
@@ -57,7 +57,7 @@ mod stringsrc {
     #[test]
     fn iterate_one_line() {
         let src = "line of source code";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 
@@ -79,7 +79,7 @@ mod stringsrc {
     #[test]
     fn iterate_one_line_with_whitespace() {
         let src = "line of source code  \t  ";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 
@@ -101,7 +101,7 @@ mod stringsrc {
     #[test]
     fn iterate_one_line_with_newline() {
         let src = "line of source code\n";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 
@@ -123,7 +123,7 @@ mod stringsrc {
     #[test]
     fn iterate_multi_lines() {
         let src = "line1\nline2\nline3\n";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 
@@ -167,7 +167,7 @@ mod stringsrc {
     #[test]
     fn iterate_multi_lines_windows_style() {
         let src = "line1\r\nline2\r\nline3\r\n";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 
@@ -211,7 +211,7 @@ mod stringsrc {
     #[test]
     fn iterate_multi_lines_with_whitespace() {
         let src = "line1  \n  line2\t\n\tline3\n";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 
@@ -256,7 +256,7 @@ mod stringsrc {
     #[test]
     fn iterate_includes_blank_lines() {
         let src = "line1\n   \nline3\n\nline5\n\t\n";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 
@@ -333,7 +333,7 @@ mod stringsrc {
     #[test]
     fn reset_lines() {
         let src = "line1\nline2\nline3\n";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 
@@ -379,7 +379,7 @@ mod stringsrc {
     #[test]
     fn continue_lines() {
         let src = "line1\nline2\nline3\n";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 
@@ -440,7 +440,7 @@ mod stringsrc {
     #[test]
     fn continue_with_empty() {
         let src = "line of source code";
-        let mut target = StringSource::empty("test");
+        let mut target = StringLinesSource::empty("test");
 
         target.cont(src);
 
@@ -464,7 +464,7 @@ mod stringsrc {
     #[test]
     fn clear_lines() {
         let src = "line1\nline2\nline3\n";
-        let mut target = StringSource::new(src, "test");
+        let mut target = StringLinesSource::new(src, "test");
 
         let line = some_or_fail!(target.next());
 

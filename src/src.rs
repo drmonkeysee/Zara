@@ -5,21 +5,45 @@ use crate::txt::{LineNumber, TextContext, TextError, TextLine, TextResult, TextS
 use std::{
     fs::File,
     io::{self, BufRead, BufReader, Error, ErrorKind, IsTerminal},
+    marker::PhantomData,
     path::Path,
     rc::Rc,
     vec::IntoIter,
 };
 
-pub struct StringSource {
+pub type StringLinesSource = StringSource<StringLinesPolicy>;
+
+pub trait StringSourcePolicy {
+    fn lines(src: impl Into<String>) -> IntoIter<String>;
+}
+
+pub struct StringLinesPolicy;
+
+impl StringSourcePolicy for StringLinesPolicy {
+    fn lines(src: impl Into<String>) -> IntoIter<String> {
+        src.into()
+            .lines()
+            .map(String::from)
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+}
+
+pub struct StringSource<P> {
     ctx: Rc<TextContext>,
     lineno: LineNumber,
     lines: Option<IntoIter<String>>,
-    mode: StringSourceMode,
+    policy: PhantomData<P>,
 }
 
-impl StringSource {
+impl<P: StringSourcePolicy> StringSource<P> {
     pub fn empty(name: impl Into<String>) -> Self {
-        Self::make(name, StringSourceMode::Lines)
+        Self {
+            ctx: TextContext::named(name).into(),
+            lineno: 0,
+            lines: None,
+            policy: PhantomData,
+        }
     }
 
     pub fn new(src: impl Into<String>, name: impl Into<String>) -> Self {
@@ -34,31 +58,16 @@ impl StringSource {
     }
 
     pub fn cont(&mut self, src: impl Into<String>) {
-        self.lines = Some(self.mode.lines(src));
+        self.lines = Some(P::lines(src));
     }
 
     pub fn clear(&mut self) {
         self.lineno = 0;
         self.lines = None;
     }
-
-    pub(crate) fn raw(src: impl Into<String>, name: impl Into<String>) -> Self {
-        let mut me = Self::make(name, StringSourceMode::Raw);
-        me.set(src);
-        me
-    }
-
-    fn make(name: impl Into<String>, mode: StringSourceMode) -> Self {
-        Self {
-            ctx: TextContext::named(name).into(),
-            lineno: 0,
-            lines: None,
-            mode,
-        }
-    }
 }
 
-impl Iterator for StringSource {
+impl<P> Iterator for StringSource<P> {
     type Item = TextResult;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -73,7 +82,7 @@ impl Iterator for StringSource {
     }
 }
 
-impl TextSource for StringSource {
+impl<P> TextSource for StringSource<P> {
     fn context(&self) -> Rc<TextContext> {
         Rc::clone(&self.ctx)
     }
@@ -185,18 +194,12 @@ impl FileSource {
     }
 }
 
-enum StringSourceMode {
-    Lines,
-    Raw,
-}
+pub(crate) type RawStringSource = StringSource<RawStringPolicy>;
 
-impl StringSourceMode {
-    fn lines(&self, src: impl Into<String>) -> IntoIter<String> {
-        let s = src.into();
-        match self {
-            Self::Lines => s.lines().map(String::from).collect::<Vec<_>>(),
-            Self::Raw => vec![s],
-        }
-        .into_iter()
+pub(crate) struct RawStringPolicy;
+
+impl StringSourcePolicy for RawStringPolicy {
+    fn lines(src: impl Into<String>) -> IntoIter<String> {
+        vec![src.into()].into_iter()
     }
 }

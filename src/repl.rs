@@ -1,6 +1,8 @@
 use rustyline::{Config, Editor, error::ReadlineError, history::MemHistory};
 use std::process::ExitCode;
-use zara::{Error, Evaluation, Exception, Interpreter, RunMode, Signal, Value, src::StringSource};
+use zara::{
+    Error, Evaluation, Exception, Interpreter, RunMode, Signal, Value, src::StringLinesSource,
+};
 
 const INPUT: &str = "λ:> ";
 const CONT: &str = "... ";
@@ -11,7 +13,7 @@ pub(crate) struct Repl {
     prompt: &'static str,
     running: bool,
     runtime: Interpreter,
-    src: StringSource,
+    src: StringLinesSource,
 }
 
 impl Repl {
@@ -25,7 +27,7 @@ impl Repl {
             prompt: INPUT,
             running: true,
             runtime: Interpreter::new(mode, true, args),
-            src: StringSource::empty("<repl>"),
+            src: StringLinesSource::empty("<repl>"),
         })
     }
 

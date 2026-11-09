@@ -6,12 +6,12 @@ use crate::{
     DataReader,
     eval::{Frame, Namespace},
     lex::datum::{self, CharCursor, CursorResult},
-    src::StringSource,
+    src::StringLinesSource,
     syntax::ParserOutput,
 };
 
 pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String>) -> PortDatum {
-    let mut src = StringSource::empty(label);
+    let mut src = StringLinesSource::empty(label);
     let mut reader = DataReader::default();
     loop {
         let Some(buf) = datum::scan(r)? else {

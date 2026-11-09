@@ -1,9 +1,9 @@
 use std::assert_matches;
-use zara::{Error, Evaluation, Interpreter, RunMode, Value, src::StringSource};
+use zara::{Error, Evaluation, Interpreter, RunMode, Value, src::StringLinesSource};
 
 struct TestRunner {
     cont: bool,
-    input: StringSource,
+    input: StringLinesSource,
     zara: Interpreter,
 }
 
@@ -11,7 +11,7 @@ impl TestRunner {
     fn new() -> Self {
         Self {
             cont: false,
-            input: StringSource::empty("<integration>"),
+            input: StringLinesSource::empty("<integration>"),
             zara: Interpreter::new(RunMode::Evaluate, false, []),
         }
     }

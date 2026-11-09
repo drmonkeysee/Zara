@@ -6,7 +6,7 @@ use std::{
 };
 use zara::{
     Evaluation, Exception, Interpreter, RunMode,
-    src::{FileSource, LineInputAdapter, LineInputSource, StringSource},
+    src::{FileSource, LineInputAdapter, LineInputSource, StringLinesSource},
     txt::TextSource,
 };
 
@@ -23,7 +23,7 @@ pub(crate) fn prg(
     prg: impl Into<String>,
     args: impl IntoIterator<Item = String>,
 ) -> cli::Result {
-    run(mode, &mut StringSource::new(prg, "<stdin prg>"), args)
+    run(mode, &mut StringLinesSource::new(prg, "<stdin prg>"), args)
 }
 
 pub(crate) fn repl(mode: RunMode, args: impl IntoIterator<Item = String>) -> cli::Result {
