@@ -89,8 +89,7 @@ fn copy(args: &[Value], env: &Frame) -> EvalResult {
         || Err(Condition::arg_error(SECOND_ARG_LABEL, TypeName::STRING, arg).into()),
         |target| {
             super::fs_cmd(super::first(args), env, |p| {
-                fs::copy(p, target.as_ref())?;
-                Ok(())
+                fs::copy(p, target.as_ref()).map(|_| ())
             })
         },
     )

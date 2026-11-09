@@ -182,7 +182,7 @@ impl FloatSpec {
         } else {
             buf += &adjustment;
             num.magnitude.end = buf.len();
-            Ok(num.try_into_exact(&buf)?.into())
+            num.try_into_exact(&buf).map(Into::into)
         }
     }
 
@@ -222,7 +222,7 @@ impl FloatSpec {
 trait RadixParser {
     fn parse_inexact<R: RadixClassifier>(spec: IntSpec<R>, input: &str) -> RealResult {
         // always parse exact magnitude first to account for radix
-        Ok(parse_signed(&spec, input)?.to_inexact())
+        parse_signed(&spec, input).map(|n| n.to_inexact())
     }
 }
 

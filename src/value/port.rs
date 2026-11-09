@@ -42,7 +42,7 @@ impl ReadPort {
     }
 
     pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
-        Ok(Self::File(FileReader::new(path)?))
+        FileReader::new(path).map(Self::File)
     }
 
     pub(super) fn stdin() -> Self {
@@ -278,8 +278,7 @@ impl BvReader {
     }
 
     fn get_byte(&mut self, advance: bool) -> PortByte {
-        let bytes = self.get_bytes(1, advance)?;
-        Ok(bytes.and_then(|b| b.first().copied()))
+        self.get_bytes(1, advance).map(first_byte)
     }
 
     fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes {
@@ -331,13 +330,11 @@ impl FileReader {
     }
 
     fn read_byte(&mut self) -> PortByte {
-        let bytes = self.get_bytes(1, true)?;
-        Ok(bytes.and_then(|b| b.first().copied()))
+        self.get_bytes(1, true).map(first_byte)
     }
 
     fn peek_byte(&mut self) -> PortByte {
-        let bytes = self.get_bytes(1, false)?;
-        Ok(bytes.and_then(|b| b.first().copied()))
+        self.get_bytes(1, false).map(first_byte)
     }
 
     fn tell(&mut self) -> PortPosition {
@@ -1193,6 +1190,10 @@ fn set_seekable_position(sk: &mut (impl Seek + ?Sized), pos: PortSeek) -> PortPo
     sk.seek(pos.try_into()?)?
         .try_into()
         .map_err(|_| PortError::Io(ErrorKind::InvalidData))
+}
+
+fn first_byte(bytes: Option<Vec<u8>>) -> Option<u8> {
+    bytes.and_then(|b| b.first().copied())
 }
 
 #[cfg(test)]
