@@ -174,7 +174,7 @@ fn arg_to_real(
     let Value::Number(x) = arg else {
         return Err(Condition::arg_error(arg_name, expected_type, arg).into());
     };
-    let Number::Real(r) = x else {
+    let Some(r) = x.as_real() else {
         return Err(
             Condition::arg_type_error(arg_name, expected_type, x.as_typename(), arg).into(),
         );

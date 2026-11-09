@@ -325,7 +325,9 @@ fn number_to_string(args: &[Value], _env: &Frame) -> EvalResult {
             let radix = args
                 .get(1)
                 .map(|v| {
-                    if let Value::Number(Number::Real(Real::Integer(n))) = v {
+                    if let Value::Number(x) = v
+                        && let Some(n) = x.as_integer()
+                    {
                         n.try_to_radix().map_err(|err| (err, v))
                     } else {
                         Err((NumericError::RadixInvalid, v))
@@ -352,7 +354,9 @@ fn number_from_string(args: &[Value], env: &Frame) -> EvalResult {
     let radix = args
         .get(1)
         .map(|v| {
-            if let Value::Number(Number::Real(Real::Integer(n))) = v {
+            if let Value::Number(x) = v
+                && let Some(n) = x.as_integer()
+            {
                 n.try_to_radix()
                     .map_err(|err| Exception::from(Condition::value_error(err, v)))
             } else {

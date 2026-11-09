@@ -55,7 +55,8 @@ fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
                         // pick which argument threw the zero error
                         super::try_num_to_val(
                             res,
-                            if let Value::Number(Number::Real(r)) = first
+                            if let Value::Number(n) = first
+                                && let Some(r) = n.as_real()
                                 && r.is_exact_zero()
                             {
                                 first

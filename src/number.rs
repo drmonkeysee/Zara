@@ -254,6 +254,22 @@ impl Number {
         NumericTypeName(self)
     }
 
+    pub(crate) fn as_real(&self) -> Option<&Real> {
+        if let Self::Real(r) = self {
+            Some(r)
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn as_integer(&self) -> Option<&Integer> {
+        if let Self::Real(Real::Integer(n)) = self {
+            Some(n)
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn to_inexact(&self) -> Self {
         match self {
             Self::Complex(z) => z.to_inexact(),
@@ -319,7 +335,7 @@ impl Number {
     }
 
     pub(crate) fn isqrt_rem(&self) -> IntPairResult {
-        if let Self::Real(Real::Integer(n)) = self {
+        if let Some(n) = self.as_integer() {
             n.isqrt_rem()
         } else {
             Err(NumericError::NotNaturalNumber(self.to_string()))
@@ -327,7 +343,7 @@ impl Number {
     }
 
     pub(crate) fn pow(&self, expt: &Self) -> NumResult {
-        if let Number::Real(r) = expt
+        if let Some(r) = expt.as_real()
             && r.is_exact_zero()
         {
             Ok(Number::one())
@@ -428,6 +444,14 @@ impl Number {
 
     fn onef() -> Self {
         Self::real(1.0)
+    }
+
+    fn as_rational(&self) -> Option<&Rational> {
+        if let Self::Real(Real::Rational(q)) = self {
+            Some(q)
+        } else {
+            None
+        }
     }
 
     fn to_cpx_floats(&self) -> (f64, f64) {
@@ -573,7 +597,7 @@ macro_rules! try_int_conversion {
             type Error = NumericError;
 
             fn try_from(value: &Number) -> Result<Self, Self::Error> {
-                if let Number::Real(Real::Integer(n)) = value {
+                if let Some(n) = value.as_integer() {
                     n.$convert()
                 } else {
                     Err(Self::Error::IntConversionInvalidType(
@@ -731,10 +755,10 @@ impl Complex {
     // works for both exact and inexact; for rational exponent q=n/d if d=2 then
     // (√z)^n keeps exactness better than general form.
     fn pow(&self, expt: &Number) -> NumResult {
-        if let Number::Real(Real::Integer(n)) = expt {
+        if let Some(n) = expt.as_integer() {
             return square_and_multiply(self.to_number(), n);
         }
-        if let Number::Real(Real::Rational(q)) = expt {
+        if let Some(q) = expt.as_rational() {
             let (n, d) = q.get_parts();
             if d.is_two() {
                 return self.sqrt().pow(&n.to_number());

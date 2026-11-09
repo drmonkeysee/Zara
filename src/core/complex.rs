@@ -46,26 +46,26 @@ fn get_angle(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {
-    let Value::Number(real) = x else {
+    let Value::Number(re) = x else {
         return Err(super::invalid_target(NumericTypeName::REAL, x));
     };
-    let Number::Real(r) = real else {
+    let Some(r) = re.as_real() else {
         return Err(Condition::arg_type_error(
             FIRST_ARG_LABEL,
             NumericTypeName::REAL,
-            real.as_typename(),
+            re.as_typename(),
             x,
         )
         .into());
     };
-    let Value::Number(imag) = y else {
+    let Value::Number(im) = y else {
         return Err(super::invalid_target(NumericTypeName::REAL, y));
     };
-    let Number::Real(i) = imag else {
+    let Some(i) = im.as_real() else {
         return Err(Condition::arg_type_error(
             FIRST_ARG_LABEL,
             NumericTypeName::REAL,
-            real.as_typename(),
+            re.as_typename(),
             y,
         )
         .into());
