@@ -275,9 +275,9 @@ fn round(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn rationalize(args: &[Value], _env: &Frame) -> EvalResult {
-    let (arg, arg2) = (first(args), super::second(args));
-    let x = super::arg_to_real(arg, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
-    let y = super::arg_to_real(arg2, SECOND_ARG_LABEL, NumericTypeName::REAL)?;
+    let (xv, yv) = (first(args), super::second(args));
+    let x = super::arg_to_real(xv, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
+    let y = super::arg_to_real(yv, SECOND_ARG_LABEL, NumericTypeName::REAL)?;
     Ok(Value::real(x.rationalize(y)))
 }
 
@@ -297,15 +297,15 @@ fn exact_integer_sqrt(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn pow(args: &[Value], _env: &Frame) -> EvalResult {
-    let (arg1, arg2) = (first(args), super::second(args));
-    let Value::Number(base) = arg1 else {
-        return Err(invalid_target(TypeName::NUMBER, arg1));
+    let (bv, exv) = (first(args), super::second(args));
+    let Value::Number(base) = bv else {
+        return Err(invalid_target(TypeName::NUMBER, bv));
     };
-    let Value::Number(exponent) = arg2 else {
-        return Err(Condition::arg_error(SECOND_ARG_LABEL, TypeName::NUMBER, arg2).into());
+    let Value::Number(exponent) = exv else {
+        return Err(Condition::arg_error(SECOND_ARG_LABEL, TypeName::NUMBER, exv).into());
     };
     base.pow(exponent).map_or_else(
-        |err| Err(Condition::value_error(err, arg2).into()),
+        |err| Err(Condition::value_error(err, exv).into()),
         |x| Ok(Value::Number(x)),
     )
 }

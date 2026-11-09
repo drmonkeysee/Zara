@@ -98,14 +98,14 @@ fn arc_cosine(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn arc_tangent(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
+    let yv = first(args);
     match args.get(1) {
-        None => super::num_op(arg, Number::atan, super::num_to_val),
-        Some(arg2) => {
-            let y = super::arg_to_real(arg, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
-            let x = super::arg_to_real(arg2, SECOND_ARG_LABEL, NumericTypeName::REAL)?;
+        None => super::num_op(yv, Number::atan, super::num_to_val),
+        Some(xv) => {
+            let y = super::arg_to_real(yv, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
+            let x = super::arg_to_real(xv, SECOND_ARG_LABEL, NumericTypeName::REAL)?;
             Number::complex(x.clone(), y.clone()).angle().map_or_else(
-                |err| Err(Condition::bi_value_error(err, arg, arg2).into()),
+                |err| Err(Condition::bi_value_error(err, yv, xv).into()),
                 |r| Ok(Value::real(r)),
             )
         }

@@ -793,13 +793,13 @@ impl<R: RadixClassifier> ClassifierParser for RadixParser<'_, R> {
 struct RealInt(IntSpec<DecClassifier>);
 
 impl RealInt {
+    #[allow(clippy::range_plus_one)]
     fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RealControl<'txt> {
         let (idx, ch) = item;
         let offset = self.0.magnitude.end;
         match ch {
             '+' | '-' => RealControl::Break(Ok(BreakCondition::cartesian(item))),
             '.' => RealControl::Continue(Some(RealClassifier::Flt(Float(FloatSpec {
-                #[allow(clippy::range_plus_one)]
                 fraction: offset + 1..offset + 1,
                 integral: self.0.clone(),
                 ..Default::default()
@@ -809,7 +809,6 @@ impl RealInt {
             'e' | 'E' => RealControl::Continue(Some(RealClassifier::Sci(Scientific {
                 e_at: idx,
                 spec: FloatSpec {
-                    #[allow(clippy::range_plus_one)]
                     exponent: offset + 1..offset + 1,
                     fraction: offset..offset,
                     integral: self.0.clone(),

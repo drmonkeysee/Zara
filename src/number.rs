@@ -829,6 +829,7 @@ impl Complex {
      *
      * Optimization: exact real 0 passes through as exact real 0 since sin 0 = 0
      */
+    #[allow(clippy::many_single_char_names)]
     fn tan(&self) -> Number {
         let (x, y) = self.get_parts();
         // an exact y has no impact on this algorithm, so convert to float
@@ -1589,9 +1590,8 @@ impl Real {
                 return Ok(Number::nan());
             } else if expt.is_positive() {
                 return Ok(Number::zero());
-            } else {
-                return Err(NumericError::DivideByZero);
             }
+            return Err(NumericError::DivideByZero);
         }
         match expt {
             // if b < 0 and e is non-integral => polar(|b|^e, πe),
@@ -3047,6 +3047,7 @@ fn sign_preserving_sqrt(f: f64) -> f64 {
 
 // Ultimately from Kahan 1987; Numerical Recipes §5.4, scale the real part
 // based on x's sign to avoid r±x canceling for ∓x when x >> y and dominates r.
+#[allow(clippy::many_single_char_names)]
 fn scaled_cpx_sqrt(r: &Real, x: &Real, y: &Real) -> Number {
     let (u, v) = if x.is_negative() {
         let t = scaled_re(r, x, Real::sub);
@@ -3062,6 +3063,7 @@ fn scaled_cpx_sqrt(r: &Real, x: &Real, y: &Real) -> Number {
 }
 
 // same algorithm as above except optimized for large floats
+#[allow(clippy::many_single_char_names)]
 fn float_scaled_cpx_sqrt(x: f64, y: f64) -> Number {
     // scale-down, scale-up
     const SD: f64 = 16.0;
@@ -3128,6 +3130,7 @@ fn atrig_mag_im(x: f64, y: f64) -> f64 {
 // https://en.wikipedia.org/wiki/Quadruple-precision_floating-point_format#Double-double_arithmetic
 // also related to: https://en.wikipedia.org/wiki/Kahan_summation_algorithm
 // https://en.wikipedia.org/wiki/William_Kahan
+#[allow(clippy::many_single_char_names)]
 fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
     // calculate s = x²+y²
     let p = x * x;
@@ -3204,6 +3207,7 @@ fn cpx_atrig_roots(x: f64, y: f64) -> (Number, Number) {
 
 // The atanh core of complex atan, due to the rotation of z = x+iy it takes -y, x;
 // denoted here flip-y and x.
+#[allow(clippy::float_cmp, reason = "algorithm acts on exact cmps")]
 fn cpx_atanh(fy: f64, x: f64, scale_th: f64) -> (f64, f64) {
     // if flip-y is negative, calculate mirror atanh to avoid cancellation of ln_1p
     if fy.is_sign_negative() {

@@ -10,6 +10,7 @@ use std::{
 #[cfg(test)]
 mod tests;
 
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 const MAX_FLT_INT: u64 = FMAX_INT as u64;
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -143,8 +144,11 @@ impl Precision {
                 // if q ≥ bitlen(u) then only 0 and 1 can be roots;
                 // r ≥ 2 only exists if u ≥ 2^q, i.e. u has > q bits
                 if u64::from(bitlen) > *q {
-                    // q must be < 64 if we got this far so we can cast down
                     debug_assert!(*q < u64::BITS.into());
+                    #[allow(
+                        clippy::cast_possible_truncation,
+                        reason = "q must be < 64; downcast safe"
+                    )]
                     let q = *q as u32;
                     Some(root_bsearch(0, 2 << bitlen.div_ceil(q), q, *u)?.into())
                 } else {
@@ -349,6 +353,12 @@ fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
  * to f64, since the sticky bit is below the round bit (because q-width > 53), the
  * rounding breaks in the correct direction based on what was lost in the division.
  */
+#[allow(
+    clippy::many_single_char_names,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    reason = "algorithm ensures safe casts"
+)]
 fn u64_float_div(n: u64, d: u64) -> f64 {
     // width of the quotient = mantissa-width + rounding bit + sticky (remainder) bit
     const QBITS: i32 = (f64::MANTISSA_DIGITS + 2).cast_signed();

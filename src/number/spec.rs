@@ -33,19 +33,19 @@ impl Radix {
             })
     }
 
-    pub(crate) fn num_to_string(&self, x: &Number) -> String {
-        match self {
-            Self::Binary => format!("{:b}", x),
-            Self::Decimal => format!("{}", x),
-            Self::Hexadecimal => format!("{:x}", x),
-            Self::Octal => format!("{:o}", x),
-        }
-    }
-
     pub(crate) fn all_prefixes() -> String {
         [Self::Binary, Self::Octal, Self::Decimal, Self::Hexadecimal]
             .map(Self::into_prefix)
             .join(" ")
+    }
+
+    pub(crate) fn num_to_string(self, x: &Number) -> String {
+        match self {
+            Self::Binary => format!("{x:b}"),
+            Self::Decimal => format!("{x}"),
+            Self::Hexadecimal => format!("{x:x}"),
+            Self::Octal => format!("{x:o}"),
+        }
     }
 
     pub(crate) const fn into_prefix(self) -> &'static str {

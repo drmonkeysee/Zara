@@ -194,6 +194,7 @@ fn num_op<R>(
     }
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible helper")]
 fn num_to_val(x: Number, _arg: &Value) -> EvalResult {
     Ok(Value::Number(x))
 }
