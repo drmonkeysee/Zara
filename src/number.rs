@@ -1507,7 +1507,6 @@ impl Real {
         }
     }
 
-    // TODO: if this becomes public rewrite to TryFrom<&Number>
     fn to_float(&self) -> f64 {
         match self {
             Self::Float(f) => *f,

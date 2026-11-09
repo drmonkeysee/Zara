@@ -4,9 +4,9 @@ use crate::{
 };
 use std::{env, mem, os};
 
-const FEATURE_NAMES: [&str; 11] = [
+const FEATURE_NAMES: [&str; 12] = [
     "r7rs",
-    // TODO: "exact-closed",
+    "exact-closed",
     "exact-complex",
     "ieee-float",
     // TODO: "full-unicode",
