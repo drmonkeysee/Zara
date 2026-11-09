@@ -2100,22 +2100,6 @@ mod integer {
         }
 
         #[test]
-        #[ignore = "floored modulo (R7RS `modulo`/`floor-remainder`) not implemented; `%` is truncated `remainder`"]
-        fn modulo_negative_dividend() {
-            let r = ok_or_fail!(Integer::from(-13) % Integer::from(4));
-
-            assert_eq!(r, Integer::from(3));
-        }
-
-        #[test]
-        #[ignore = "floored modulo (R7RS `modulo`/`floor-remainder`) not implemented; `%` is truncated `remainder`"]
-        fn modulo_negative_divisor() {
-            let r = ok_or_fail!(Integer::from(13) % Integer::from(-4));
-
-            assert_eq!(r, Integer::from(-3));
-        }
-
-        #[test]
         #[ignore = "multi-precision division not yet implemented"]
         fn multi_precision() {
             let a = Integer {
@@ -7922,6 +7906,10 @@ mod sqrt {
 
         #[test]
         fn negative_non_perfect_square_real_part_stays_exact_zero() {
+            // Zara keeps the exact zero carried over from the exact real
+            // axis, even though the imaginary part is forced inexact; this
+            // is a deliberate Zara choice, not what Chez does (Chez
+            // float-taints the real part to 0.0 here too).
             let r = Number::real(-2).sqrt();
 
             let (re, im) = complex_parts!(r);
